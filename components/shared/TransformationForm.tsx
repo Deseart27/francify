@@ -29,13 +29,15 @@ import { defaultValues } from "@/constants"
 import { CustomField } from "./CustomField"
 import { startTransition, useState, useTransition } from "react"
 import { AspectRatioKey, debounce, deepMergeObjects } from "@/lib/utils"
+import MediaUploader from "./MediaUploader"
+import TransformedImage from "./TransformedImage"
 
 export const formSchema = z.object({
     title: z.string(),
     aspectRatio: z.string().optional(),
     color: z.string().optional(),
     prompt: z.string().optional(),
-    id: z.string(),
+    publicId: z.string(),
 })
 
 const TransformationForm = ({ action, data = null, type, userId, creditBalance, config = null }: TransformationFormProps) => {
@@ -73,47 +75,47 @@ const TransformationForm = ({ action, data = null, type, userId, creditBalance, 
 
     const onSelectFieldHandler = (value: string,
         onChangeField: (value: string) => void) => {
-            const imageSize = aspectRatioOptions[value as AspectRatioKey]
+        const imageSize = aspectRatioOptions[value as AspectRatioKey]
 
-            setImage((prevState: any) => ({
-                ...prevState,
-                aspectRatio:imageSize.aspectRatio,
-                width: imageSize.width,
-                height: imageSize.height,
-            }))
-            
-            setNewTransformation(transformationType.config)
+        setImage((prevState: any) => ({
+            ...prevState,
+            aspectRatio: imageSize.aspectRatio,
+            width: imageSize.width,
+            height: imageSize.height,
+        }))
 
-            return onChangeField(value)
-         }
+        setNewTransformation(transformationType.config)
 
-    const onInputChangeHandler = (fieldName: string, value: string, type: string, onChangeField: (value: string) => void) => { 
+        return onChangeField(value)
+    }
+
+    const onInputChangeHandler = (fieldName: string, value: string, type: string, onChangeField: (value: string) => void) => {
         debounce(() => {
             setNewTransformation((prevState: any) => ({
                 ...prevState,
-                [type]:{
+                [type]: {
                     ...prevState?.[type],
-                    [fieldName === 'prompt' ? 'prompt' : 'to']:value
+                    [fieldName === 'prompt' ? 'prompt' : 'to']: value
                 }
             }))
-        
+
             return onChangeField(value)
         }, 1000);
     }
 
     const onTransformHandler = async () => {
         setIsTransforming(true)
-    
+
         setTransformationConfig(
-          deepMergeObjects(newTransformation, transformationConfig)
+            deepMergeObjects(newTransformation, transformationConfig)
         )
-    
+
         setNewTransformation(null)
-        
+
         startTransition(async () => {
-          //await updateCredits(userId, creditFee)
+            //await updateCredits(userId, creditFee)
         })
-      }
+    }
 
     return (
         <Form {...form}>
@@ -202,21 +204,48 @@ const TransformationForm = ({ action, data = null, type, userId, creditBalance, 
                     </div>
                 )}
 
+                <div className="media-uploader-field">
+                    <CustomField
+                        control={form.control}
+                        name="publicId"
+                        className="flex size-full flex-col"
+                        render={({ field }) => (
+                            <MediaUploader
+                                onValueChange={field.onChange}
+                                setImage={setImage}
+                                publicId={field.value}
+                                image={image}
+                                type={type}
+                            />
+                        )}
+                    />
+
+                    <TransformedImage
+                        image={image}
+                        type={type}
+                        title={form.getValues().title}
+                        isTransforming={isTransforming}
+                        setIsTransforming={setIsTransforming}
+                        transformationConfig={transformationConfig}
+
+                    />
+                </div>
+
                 <div className="flex flex-col gap-4">
 
                     <Button
-                    className="submit-button capitalize"
-                    type="submit"
-                    disabled={isTransforming || newTransformation === null}
-                    onClick={onTransformHandler}>
-                            {isTransforming ? "Transforming..." : "Apply transformation"} 
+                        className="submit-button capitalize"
+                        type="submit"
+                        disabled={isTransforming || newTransformation === null}
+                        onClick={onTransformHandler}>
+                        {isTransforming ? "Transforming..." : "Apply transformation"}
                     </Button>
 
                     <Button
-                    className="submit-button capitalize"
-                    type="submit"
-                    disabled={isSubmitting}>
-                            {isSubmitting ? "Submitting..." : "Save image"}
+                        className="submit-button capitalize"
+                        type="submit"
+                        disabled={isSubmitting}>
+                        {isSubmitting ? "Submitting..." : "Save image"}
                     </Button>
                 </div>
 
@@ -224,6 +253,7 @@ const TransformationForm = ({ action, data = null, type, userId, creditBalance, 
             </form>
 
         </Form>
+
     )
 }
 

@@ -27,7 +27,7 @@ const AddTransformationTypePage = async ({params: { type}}: SearchParamProps) =>
       />
 
     </section>
-      
+    
     </>
   )
 }
